@@ -10,6 +10,8 @@ EfficientNet-B0 model, replace `diagnose()` below (see the NOTE).
 import io
 import base64
 import hashlib
+import random
+from datetime import datetime, timedelta
 from functools import wraps
 
 from flask import (
@@ -140,6 +142,79 @@ def diagnose(image_bytes):
     return choice, confidence
 
 
+CONDITION_ORDER = ["Healthy", "Brown Spot", "Leaf Blast", "Neck Blast"]
+
+
+# ---------------------------------------------------------------------------
+# Demo data + analytics
+# ---------------------------------------------------------------------------
+def seed_demo_history():
+    """Seed a realistic-looking scan history so the analytics come alive."""
+    rng = random.Random(42)
+    crops = [c["name"] for c in CROPS]
+    weights = [0.46, 0.2, 0.19, 0.15]
+    now = datetime.now()
+    history = []
+    for _ in range(16):
+        disease = rng.choices(CONDITION_ORDER, weights=weights)[0]
+        crop = rng.choice(crops)
+        conf = round(rng.uniform(88, 97) if disease == "Healthy"
+                     else rng.uniform(77, 95), 1)
+        ts = now - timedelta(days=rng.randint(0, 9),
+                             hours=rng.randint(0, 23),
+                             minutes=rng.randint(0, 59))
+        history.append({
+            "disease": disease, "confidence": conf, "crop": crop,
+            "ts": ts.isoformat(), "date": ts.strftime("%b %d, %H:%M"),
+        })
+    history.sort(key=lambda h: h["ts"])
+    return history
+
+
+def compute_analytics(history):
+    total = len(history)
+    condition_counts = {c: 0 for c in CONDITION_ORDER}
+    crop_counts = {}
+    conf_sum = 0.0
+    for h in history:
+        condition_counts[h["disease"]] = condition_counts.get(h["disease"], 0) + 1
+        crop_counts[h["crop"]] = crop_counts.get(h["crop"], 0) + 1
+        conf_sum += h["confidence"]
+
+    healthy = condition_counts.get("Healthy", 0)
+    diseased = total - healthy
+    avg_conf = round(conf_sum / total, 1) if total else 0
+    health_score = round(healthy / total * 100) if total else 0
+
+    today = datetime.now().date()
+    days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    day_labels, daily_healthy, daily_diseased = [], [], []
+    for d in days:
+        day_labels.append(d.strftime("%a"))
+        dh = dd = 0
+        for h in history:
+            if datetime.fromisoformat(h["ts"]).date() == d:
+                if h["disease"] == "Healthy":
+                    dh += 1
+                else:
+                    dd += 1
+        daily_healthy.append(dh)
+        daily_diseased.append(dd)
+
+    crop_items = sorted(crop_counts.items(), key=lambda kv: kv[1], reverse=True)
+    return {
+        "total": total, "healthy": healthy, "diseased": diseased,
+        "avg_conf": avg_conf, "health_score": health_score,
+        "condition_labels": CONDITION_ORDER,
+        "condition_values": [condition_counts[c] for c in CONDITION_ORDER],
+        "crop_labels": [k for k, _ in crop_items],
+        "crop_values": [v for _, v in crop_items],
+        "day_labels": day_labels,
+        "daily_healthy": daily_healthy,
+        "daily_diseased": daily_diseased,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Auth helpers
 # ---------------------------------------------------------------------------
@@ -171,7 +246,8 @@ def login():
         if user and user["password"] == password:
             session["user"] = username
             session["name"] = user["name"]
-            session.setdefault("history", [])
+            if "history" not in session:
+                session["history"] = seed_demo_history()
             return redirect(url_for("dashboard"))
         flash("Wrong username or password. Try the demo login below.")
     return render_template("login.html")
@@ -201,6 +277,29 @@ def dashboard():
     )
 
 
+@app.route("/analytics")
+@login_required
+def analytics():
+    history = session.get("history", [])
+    data = compute_analytics(history)
+    return render_template("analytics.html", name=session.get("name"), a=data)
+
+
+@app.route("/history")
+@login_required
+def history():
+    items = list(reversed(session.get("history", [])))
+    return render_template("history.html", name=session.get("name"),
+                           items=items, conditions=CONDITION_ORDER, crops=CROPS)
+
+
+@app.route("/guide")
+@login_required
+def guide():
+    return render_template("guide.html", name=session.get("name"),
+                           diseases=DISEASES)
+
+
 @app.route("/scan", methods=["POST"])
 @login_required
 def scan():
@@ -223,7 +322,11 @@ def scan():
     b64 = base64.b64encode(image_bytes).decode("ascii")
     info = DISEASES[disease]
 
-    record = {"disease": disease, "confidence": confidence, "crop": crop}
+    now = datetime.now()
+    record = {
+        "disease": disease, "confidence": confidence, "crop": crop,
+        "ts": now.isoformat(), "date": now.strftime("%b %d, %H:%M"),
+    }
     history = session.get("history", [])
     history.append(record)
     session["history"] = history

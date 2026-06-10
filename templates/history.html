@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>🕑 Scan History</h1>
+  <p class="muted">Every leaf you've checked, newest first.</p>
+</section>
+
+<section class="panel">
+  <div class="filters" id="filters">
+    <button class="filter-chip active" data-filter="all">All</button>
+    <button class="filter-chip" data-filter="Healthy">Healthy</button>
+    <button class="filter-chip" data-filter="Brown Spot">Brown Spot</button>
+    <button class="filter-chip" data-filter="Leaf Blast">Leaf Blast</button>
+    <button class="filter-chip" data-filter="Neck Blast">Neck Blast</button>
+  </div>
+
+  {% if items %}
+  <table class="hist-table">
+    <thead>
+      <tr><th>Date</th><th>Crop</th><th>Diagnosis</th><th>Confidence</th></tr>
+    </thead>
+    <tbody>
+      {% for h in items %}
+      <tr data-cond="{{ h.disease }}">
+        <td class="t-date">{{ h.date }}</td>
+        <td class="t-crop">{{ h.crop }}</td>
+        <td><span class="badge badge-{{ 'good' if h.disease == 'Healthy' else 'bad' }}">{{ h.disease }}</span></td>
+        <td class="t-conf">{{ h.confidence }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No scans yet. Head to <a href="{{ url_for('dashboard') }}">Scan</a> to check your first leaf.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const chips = document.querySelectorAll('.filter-chip');
+  const rows = document.querySelectorAll('.hist-table tbody tr');
+  chips.forEach(chip => chip.addEventListener('click', () => {
+    chips.forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    const f = chip.dataset.filter;
+    rows.forEach(r => {
+      r.style.display = (f === 'all' || r.dataset.cond === f) ? '' : 'none';
+    });
+  }));
+</script>
+{% endblock %}

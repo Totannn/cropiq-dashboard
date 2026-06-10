@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Crop Guide{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>📖 Disease Guide</h1>
+  <p class="muted">Know what to look for and exactly how to respond.</p>
+</section>
+
+<section class="guide-grid">
+  {% for name, info in diseases.items() %}
+  <article class="guide-card tone-{{ info.tone }}">
+    <header class="guide-head">
+      <span class="guide-emoji">{{ info.emoji }}</span>
+      <h2>{{ name }}</h2>
+    </header>
+    <p class="guide-summary">{{ info.summary }}</p>
+    <h3>Recommended action</h3>
+    <ul class="guide-steps">
+      {% for step in info.treatment %}
+      <li>{{ step }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

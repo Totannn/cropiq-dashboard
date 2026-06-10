@@ -10,18 +10,18 @@
 </section>
 
 <section class="stats">
-  <div class="stat-card">
+  <a class="stat-card" href="{{ url_for('history') }}">
     <span class="stat-num">{{ scans }}</span>
     <span class="stat-label">Total scans</span>
-  </div>
-  <div class="stat-card good">
+  </a>
+  <a class="stat-card good" href="{{ url_for('analytics') }}">
     <span class="stat-num">{{ healthy }}</span>
     <span class="stat-label">Healthy</span>
-  </div>
-  <div class="stat-card bad">
+  </a>
+  <a class="stat-card bad" href="{{ url_for('analytics') }}">
     <span class="stat-num">{{ diseased }}</span>
     <span class="stat-label">Needs attention</span>
-  </div>
+  </a>
 </section>
 
 <form method="POST" action="{{ url_for('scan') }}" enctype="multipart/form-data" id="scanForm">
@@ -53,6 +53,14 @@
   </section>
 </form>
 
+<div class="scan-overlay" id="scanOverlay">
+  <div class="scan-box">
+    <div class="leaf-spin">🌿</div>
+    <p class="scan-title">Analyzing your leaf…</p>
+    <p class="scan-sub">CropIQ AI is checking for disease patterns</p>
+  </div>
+</div>
+
 {% if history %}
 <section class="panel">
   <h2 class="panel-title">Recent scans</h2>
@@ -79,6 +87,13 @@
     preview.hidden = false;
     dzInner.hidden = true;
     document.getElementById('dropzone').classList.add('has-image');
+  });
+
+  // Show scanning animation on submit (only if a file is chosen)
+  document.getElementById('scanForm').addEventListener('submit', (e) => {
+    if (input.files.length) {
+      document.getElementById('scanOverlay').classList.add('show');
+    }
   });
 </script>
 {% endblock %}

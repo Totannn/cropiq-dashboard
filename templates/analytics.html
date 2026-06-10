@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>📊 Field Analytics</h1>
+  <p class="muted">An overview of every scan across your crops.</p>
+</section>
+
+<section class="kpis">
+  <div class="kpi">
+    <div class="kpi-ring" style="--val: {{ a.health_score }}">
+      <span>{{ a.health_score }}%</span>
+    </div>
+    <span class="kpi-label">Field health score</span>
+  </div>
+  <div class="kpi-list">
+    <div class="kpi-item"><span class="kpi-num">{{ a.total }}</span><span>Total scans</span></div>
+    <div class="kpi-item good"><span class="kpi-num">{{ a.healthy }}</span><span>Healthy</span></div>
+    <div class="kpi-item bad"><span class="kpi-num">{{ a.diseased }}</span><span>Diseased</span></div>
+    <div class="kpi-item"><span class="kpi-num">{{ a.avg_conf }}%</span><span>Avg. confidence</span></div>
+  </div>
+</section>
+
+<section class="chart-grid">
+  <div class="panel">
+    <h2 class="panel-title">Condition breakdown</h2>
+    <canvas id="conditionChart" height="220"></canvas>
+  </div>
+  <div class="panel">
+    <h2 class="panel-title">Scans by crop</h2>
+    <canvas id="cropChart" height="220"></canvas>
+  </div>
+  <div class="panel panel-wide">
+    <h2 class="panel-title">Scans over the last 7 days</h2>
+    <canvas id="trendChart" height="120"></canvas>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const GREEN='#2e8b4f', BROWN='#9c6b3f', AMBER='#c08a2d', RED='#c0492d', LINE='#e7e0d4';
+  Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+  Chart.defaults.color = '#6b7568';
+
+  new Chart(document.getElementById('conditionChart'), {
+    type: 'doughnut',
+    data: {
+      labels: {{ a.condition_labels | tojson }},
+      datasets: [{
+        data: {{ a.condition_values | tojson }},
+        backgroundColor: [GREEN, BROWN, AMBER, RED],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } }, cutout: '62%' }
+  });
+
+  new Chart(document.getElementById('cropChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ a.crop_labels | tojson }},
+      datasets: [{ data: {{ a.crop_values | tojson }}, backgroundColor: GREEN, borderRadius: 6 }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: LINE } }, x: { grid: { display: false } } }
+    }
+  });
+
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: {{ a.day_labels | tojson }},
+      datasets: [
+        { label: 'Healthy', data: {{ a.daily_healthy | tojson }}, borderColor: GREEN, backgroundColor: 'rgba(46,139,79,.12)', fill: true, tension: .35 },
+        { label: 'Diseased', data: {{ a.daily_diseased | tojson }}, borderColor: RED, backgroundColor: 'rgba(192,73,45,.10)', fill: true, tension: .35 }
+      ]
+    },
+    options: {
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: LINE } }, x: { grid: { display: false } } }
+    }
+  });
+</script>
+{% endblock %}

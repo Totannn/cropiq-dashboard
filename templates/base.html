@@ -16,6 +16,12 @@
       <span class="brand-text">Crop<span>IQ</span></span>
     </a>
     {% if session.get('user') %}
+    <nav class="nav-menu">
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">🔬 Scan</a>
+      <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">📊 Analytics</a>
+      <a href="{{ url_for('history') }}" class="{{ 'active' if request.endpoint == 'history' }}">🕑 History</a>
+      <a href="{{ url_for('guide') }}" class="{{ 'active' if request.endpoint == 'guide' }}">📖 Guide</a>
+    </nav>
     <div class="nav-right">
       <span class="nav-user">👋 {{ session.get('name') }}</span>
       <a class="btn btn-ghost btn-sm" href="{{ url_for('logout') }}">Log out</a>
@@ -38,5 +44,6 @@
   <footer class="foot">
     CropIQ · AI crop disease detection for African farmers
   </footer>
+  {% block scripts %}{% endblock %}
 </body>
 </html>
