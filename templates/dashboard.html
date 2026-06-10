@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>Good day, {{ name }} 👋</h1>
+    <p class="muted">Pick a crop, upload a leaf photo, and get an instant health check.</p>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat-card">
+    <span class="stat-num">{{ scans }}</span>
+    <span class="stat-label">Total scans</span>
+  </div>
+  <div class="stat-card good">
+    <span class="stat-num">{{ healthy }}</span>
+    <span class="stat-label">Healthy</span>
+  </div>
+  <div class="stat-card bad">
+    <span class="stat-num">{{ diseased }}</span>
+    <span class="stat-label">Needs attention</span>
+  </div>
+</section>
+
+<form method="POST" action="{{ url_for('scan') }}" enctype="multipart/form-data" id="scanForm">
+  <section class="panel">
+    <h2 class="panel-title">1 · Choose a crop</h2>
+    <div class="crop-grid">
+      {% for c in crops %}
+      <label class="crop-chip">
+        <input type="radio" name="crop" value="{{ c.name }}" {% if loop.first %}checked{% endif %}>
+        <span class="crop-emoji">{{ c.emoji }}</span>
+        <span class="crop-name">{{ c.name }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel-title">2 · Upload a leaf photo</h2>
+    <label class="dropzone" id="dropzone">
+      <input type="file" name="leaf" accept="image/*" id="leafInput" hidden>
+      <div class="dz-inner" id="dzInner">
+        <span class="dz-icon">📷</span>
+        <span class="dz-main">Tap to take or choose a photo</span>
+        <span class="dz-sub">Clear photo of a single leaf works best · JPG or PNG</span>
+      </div>
+      <img id="preview" class="dz-preview" alt="preview" hidden>
+    </label>
+    <button class="btn btn-primary btn-block btn-lg" type="submit">🔬 Diagnose now</button>
+  </section>
+</form>
+
+{% if history %}
+<section class="panel">
+  <h2 class="panel-title">Recent scans</h2>
+  <ul class="history">
+    {% for h in history %}
+    <li class="history-row">
+      <span class="h-crop">{{ h.crop if h.crop else '—' }}</span>
+      <span class="badge badge-{{ 'good' if h.disease == 'Healthy' else 'bad' }}">{{ h.disease }}</span>
+      <span class="h-conf">{{ h.confidence }}%</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<script>
+  const input = document.getElementById('leafInput');
+  const preview = document.getElementById('preview');
+  const dzInner = document.getElementById('dzInner');
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+    dzInner.hidden = true;
+    document.getElementById('dropzone').classList.add('has-image');
+  });
+</script>
+{% endblock %}

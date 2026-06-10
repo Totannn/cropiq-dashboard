@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Diagnosis{% endblock %}
+
+{% block content %}
+<section class="result-head tone-{{ info.tone }}">
+  <span class="result-emoji">{{ info.emoji }}</span>
+  <div>
+    <span class="result-crop">{{ crop }}</span>
+    <h1>{{ disease }}</h1>
+    <p class="result-summary">{{ info.summary }}</p>
+  </div>
+</section>
+
+<section class="result-grid">
+  <div class="panel">
+    <img src="{{ image_data }}" alt="scanned leaf" class="result-image">
+  </div>
+
+  <div class="panel">
+    <h2 class="panel-title">Confidence</h2>
+    <div class="confidence">
+      <div class="conf-bar"><div class="conf-fill tone-{{ info.tone }}" style="width: {{ confidence }}%"></div></div>
+      <span class="conf-val">{{ confidence }}%</span>
+    </div>
+
+    <h2 class="panel-title" style="margin-top:1.6rem">What to do</h2>
+    <ol class="treatment">
+      {% for step in info.treatment %}
+      <li>{{ step }}</li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+
+<div class="result-actions">
+  <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}">← Scan another leaf</a>
+</div>
+{% endblock %}

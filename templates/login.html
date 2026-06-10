@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block nav %}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="brand-mark big">🌿</span>
+      <h1>Crop<span>IQ</span></h1>
+      <p class="tagline">Snap a leaf. Get an instant diagnosis. Save your harvest.</p>
+    </div>
+
+    <form method="POST" class="auth-form">
+      <label>Username
+        <input type="text" name="username" placeholder="farmer" autocomplete="username" required>
+      </label>
+      <label>Password
+        <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+      </label>
+      <button class="btn btn-primary btn-block" type="submit">Sign in →</button>
+    </form>
+
+    <div class="demo-hint">
+      <strong>Demo login</strong>
+      <code>farmer</code> / <code>farmer123</code>
+    </div>
+  </div>
+
+  <div class="auth-aside">
+    <h2>One app. Every crop.</h2>
+    <p>CropIQ detects disease across 10 major African crops in seconds — so you act before it spreads.</p>
+    <div class="aside-crops">
+      🌽 🥔 🌾 🍠 🌱 🌿 🫘 🍌 🥜 🍫
+    </div>
+  </div>
+</div>
+{% endblock %}
