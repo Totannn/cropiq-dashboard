@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'icons.html' import icon %}
 {% block title %}Sign in{% endblock %}
 {% block body_class %}auth-page{% endblock %}
 {% block nav %}{% endblock %}
@@ -7,7 +8,7 @@
 <div class="auth-wrap">
   <div class="auth-card">
     <div class="auth-brand">
-      <span class="brand-mark big">🌿</span>
+      <span class="brand-mark big">{{ icon('leaf', 'brand-svg') }}</span>
       <h1>Crop<span>IQ</span></h1>
       <p class="tagline">Snap a leaf. Get an instant diagnosis. Save your harvest.</p>
     </div>
@@ -27,7 +28,7 @@
     <h2>One app. Every crop.</h2>
     <p>CropIQ detects disease across 10 major African crops in seconds — so you act before it spreads.</p>
     <div class="aside-crops">
-      🌽 🥔 🌾 🍠 🌱 🌿 🫘 🍌 🥜 🍫
+      Maize · Cassava · Rice · Yam · Sorghum · Millet · Cowpea · Plantain · Groundnut · Cocoa
     </div>
   </div>
 </div>

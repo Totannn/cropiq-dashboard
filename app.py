@@ -215,16 +215,71 @@ def compute_analytics(history):
     }
 
 
+def build_advisories(history):
+    """Turn scan history into a few plain-language, actionable alerts."""
+    if not history:
+        return [{"level": "info", "icon": "📷",
+                 "text": "No scans yet — upload your first leaf to get a diagnosis."}]
+
+    now = datetime.now()
+    week_ago = now - timedelta(days=7)
+    recent = [h for h in history if datetime.fromisoformat(h["ts"]) >= week_ago]
+    diseased_recent = [h for h in recent if h["disease"] != "Healthy"]
+
+    advisories = []
+    if diseased_recent:
+        crop_counts = {}
+        for h in diseased_recent:
+            crop_counts[h["crop"]] = crop_counts.get(h["crop"], 0) + 1
+        top_crop = max(crop_counts, key=crop_counts.get)
+        advisories.append({
+            "level": "alert", "icon": "⚠️",
+            "text": (f"{len(diseased_recent)} disease detection(s) in the last 7 days. "
+                     f"{top_crop} is most affected — inspect that field first."),
+        })
+    else:
+        advisories.append({
+            "level": "good", "icon": "✅",
+            "text": "No disease detected in the last 7 days. Keep monitoring weekly.",
+        })
+
+    counts = {}
+    for h in history:
+        if h["disease"] != "Healthy":
+            counts[h["disease"]] = counts.get(h["disease"], 0) + 1
+    if counts:
+        top = max(counts, key=counts.get)
+        advisories.append({
+            "level": "warn", "icon": "🔎",
+            "text": (f"{top} is your most common issue ({counts[top]} cases). "
+                     f"Review treatment steps in the Guide."),
+        })
+
+    return advisories[:3]
+
+
 # ---------------------------------------------------------------------------
 # Auth helpers
 # ---------------------------------------------------------------------------
 def login_required(view):
+    # Login is disabled for the open testing phase — a guest session is
+    # auto-created in before_request, so this is now a pass-through.
     @wraps(view)
     def wrapped(*args, **kwargs):
-        if "user" not in session:
-            return redirect(url_for("login"))
         return view(*args, **kwargs)
     return wrapped
+
+
+@app.before_request
+def ensure_guest_session():
+    """Give every visitor a ready-to-use session (no login needed)."""
+    if "name" not in session:
+        session["user"] = "guest"
+        session["name"] = "Guest"
+    history = session.get("history")
+    # (Re)seed if missing or from an older schema without timestamps.
+    if not history or any("ts" not in h for h in history):
+        session["history"] = seed_demo_history()
 
 
 # ---------------------------------------------------------------------------
@@ -232,9 +287,7 @@ def login_required(view):
 # ---------------------------------------------------------------------------
 @app.route("/")
 def index():
-    if "user" in session:
-        return redirect(url_for("dashboard"))
-    return redirect(url_for("login"))
+    return redirect(url_for("dashboard"))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -263,16 +316,27 @@ def logout():
 @login_required
 def dashboard():
     history = session.get("history", [])
-    scans = len(history)
-    healthy = sum(1 for h in history if h["disease"] == "Healthy")
-    diseased = scans - healthy
+    a = compute_analytics(history)
+    advisories = build_advisories(history)
+
+    now = datetime.now()
+    week_ago = now - timedelta(days=7)
+    week_scans = sum(1 for h in history
+                     if datetime.fromisoformat(h["ts"]) >= week_ago)
+    detection_rate = round(a["diseased"] / a["total"] * 100) if a["total"] else 0
+
     return render_template(
         "dashboard.html",
         name=session.get("name"),
         crops=CROPS,
-        scans=scans,
-        healthy=healthy,
-        diseased=diseased,
+        scans=a["total"],
+        healthy=a["healthy"],
+        diseased=a["diseased"],
+        week_scans=week_scans,
+        detection_rate=detection_rate,
+        advisories=advisories,
+        trend_labels=a["day_labels"],
+        trend_total=[h + d for h, d in zip(a["daily_healthy"], a["daily_diseased"])],
         history=list(reversed(history))[:6],
     )
 

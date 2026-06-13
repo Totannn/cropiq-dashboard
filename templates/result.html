@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% from 'icons.html' import tone_icon %}
 {% block title %}Diagnosis{% endblock %}
 
 {% block content %}
 <section class="result-head tone-{{ info.tone }}">
-  <span class="result-emoji">{{ info.emoji }}</span>
+  <span class="result-icon">{{ tone_icon(info.tone, 'result-svg') }}</span>
   <div>
     <span class="result-crop">{{ crop }}</span>
     <h1>{{ disease }}</h1>

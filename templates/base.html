@@ -1,3 +1,4 @@
+{% from 'icons.html' import icon %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,21 +13,15 @@
   {% block nav %}
   <header class="topbar">
     <a class="brand" href="{{ url_for('dashboard') }}">
-      <span class="brand-mark">🌿</span>
+      <span class="brand-mark">{{ icon('leaf', 'brand-svg') }}</span>
       <span class="brand-text">Crop<span>IQ</span></span>
     </a>
-    {% if session.get('user') %}
     <nav class="nav-menu">
-      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">🔬 Scan</a>
-      <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">📊 Analytics</a>
-      <a href="{{ url_for('history') }}" class="{{ 'active' if request.endpoint == 'history' }}">🕑 History</a>
-      <a href="{{ url_for('guide') }}" class="{{ 'active' if request.endpoint == 'guide' }}">📖 Guide</a>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">{{ icon('camera', 'nav-svg') }} Scan</a>
+      <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">{{ icon('chart', 'nav-svg') }} Analytics</a>
+      <a href="{{ url_for('history') }}" class="{{ 'active' if request.endpoint == 'history' }}">{{ icon('clock', 'nav-svg') }} History</a>
+      <a href="{{ url_for('guide') }}" class="{{ 'active' if request.endpoint == 'guide' }}">{{ icon('book', 'nav-svg') }} Guide</a>
     </nav>
-    <div class="nav-right">
-      <span class="nav-user">👋 {{ session.get('name') }}</span>
-      <a class="btn btn-ghost btn-sm" href="{{ url_for('logout') }}">Log out</a>
-    </div>
-    {% endif %}
   </header>
   {% endblock %}
 

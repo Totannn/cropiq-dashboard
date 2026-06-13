@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% from 'icons.html' import icon %}
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div>
-    <h1>Good day, {{ name }} 👋</h1>
+    <h1>Good day, {{ name }}</h1>
     <p class="muted">Pick a crop, upload a leaf photo, and get an instant health check.</p>
   </div>
 </section>
@@ -22,60 +23,106 @@
     <span class="stat-num">{{ diseased }}</span>
     <span class="stat-label">Needs attention</span>
   </a>
+  <a class="stat-card neutral" href="{{ url_for('analytics') }}">
+    <span class="stat-num">{{ week_scans }}</span>
+    <span class="stat-label">Scans this week</span>
+  </a>
 </section>
 
-<form method="POST" action="{{ url_for('scan') }}" enctype="multipart/form-data" id="scanForm">
-  <section class="panel">
-    <h2 class="panel-title">1 · Choose a crop</h2>
-    <div class="crop-grid">
-      {% for c in crops %}
-      <label class="crop-chip">
-        <input type="radio" name="crop" value="{{ c.name }}" {% if loop.first %}checked{% endif %}>
-        <span class="crop-emoji">{{ c.emoji }}</span>
-        <span class="crop-name">{{ c.name }}</span>
-      </label>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2 class="panel-title">2 · Upload a leaf photo</h2>
-    <label class="dropzone" id="dropzone">
-      <input type="file" name="leaf" accept="image/*" id="leafInput" hidden>
-      <div class="dz-inner" id="dzInner">
-        <span class="dz-icon">📷</span>
-        <span class="dz-main">Tap to take or choose a photo</span>
-        <span class="dz-sub">Clear photo of a single leaf works best · JPG or PNG</span>
-      </div>
-      <img id="preview" class="dz-preview" alt="preview" hidden>
-    </label>
-    <button class="btn btn-primary btn-block btn-lg" type="submit">🔬 Diagnose now</button>
-  </section>
-</form>
-
-<div class="scan-overlay" id="scanOverlay">
-  <div class="scan-box">
-    <div class="leaf-spin">🌿</div>
-    <p class="scan-title">Analyzing your leaf…</p>
-    <p class="scan-sub">CropIQ AI is checking for disease patterns</p>
-  </div>
-</div>
-
-{% if history %}
+{% if advisories %}
 <section class="panel">
-  <h2 class="panel-title">Recent scans</h2>
-  <ul class="history">
-    {% for h in history %}
-    <li class="history-row">
-      <span class="h-crop">{{ h.crop if h.crop else '—' }}</span>
-      <span class="badge badge-{{ 'good' if h.disease == 'Healthy' else 'bad' }}">{{ h.disease }}</span>
-      <span class="h-conf">{{ h.confidence }}%</span>
+  <h2 class="panel-title">Advisories</h2>
+  <ul class="advisories">
+    {% for adv in advisories %}
+    <li class="advisory adv-{{ adv.level }}">
+      <span class="adv-icon">
+        {%- if adv.level == 'alert' %}{{ icon('alert-triangle') }}
+        {%- elif adv.level == 'warn' %}{{ icon('search') }}
+        {%- elif adv.level == 'good' %}{{ icon('check') }}
+        {%- else %}{{ icon('camera') }}{% endif -%}
+      </span>
+      <span class="adv-text">{{ adv.text }}</span>
     </li>
     {% endfor %}
   </ul>
 </section>
 {% endif %}
 
+<div class="dash-cols">
+  <div class="dash-main">
+    <form method="POST" action="{{ url_for('scan') }}" enctype="multipart/form-data" id="scanForm">
+      <section class="panel">
+        <h2 class="panel-title">1 · Choose a crop</h2>
+        <div class="crop-grid">
+          {% for c in crops %}
+          <label class="crop-chip">
+            <input type="radio" name="crop" value="{{ c.name }}" {% if loop.first %}checked{% endif %}>
+            <span class="crop-mono">{{ c.name[0] }}</span>
+            <span class="crop-name">{{ c.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">2 · Upload a leaf photo</h2>
+        <label class="dropzone" id="dropzone">
+          <input type="file" name="leaf" accept="image/*" id="leafInput" hidden>
+          <div class="dz-inner" id="dzInner">
+            <span class="dz-icon">{{ icon('camera') }}</span>
+            <span class="dz-main">Tap to take or choose a photo</span>
+            <span class="dz-sub">A clear photo of a single leaf works best · JPG or PNG</span>
+          </div>
+          <img id="preview" class="dz-preview" alt="preview" hidden>
+        </label>
+        <button class="btn btn-primary btn-block btn-lg" type="submit">Diagnose now</button>
+      </section>
+    </form>
+  </div>
+
+  <aside class="dash-side">
+    <section class="panel">
+      <h2 class="panel-title">Field snapshot</h2>
+      <div class="snapshot-rate">
+        <span class="rate-num">{{ detection_rate }}%</span>
+        <span class="rate-label">disease detection rate</span>
+      </div>
+      <canvas id="trendSpark" height="90"></canvas>
+      <p class="snapshot-cap">Scans over the last 7 days</p>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Recent scans</h2>
+      {% if history %}
+      <ul class="history compact">
+        {% for h in history %}
+        <li class="history-row">
+          <span class="h-crop">{{ h.crop if h.crop else '—' }}</span>
+          <span class="badge badge-{{ 'good' if h.disease == 'Healthy' else 'bad' }}">{{ h.disease }}</span>
+          <span class="h-conf">{{ h.confidence }}%</span>
+        </li>
+        {% endfor %}
+      </ul>
+      <a class="see-all" href="{{ url_for('history') }}">View all history →</a>
+      {% else %}
+      <p class="empty">No scans yet.</p>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+
+<div class="scan-overlay" id="scanOverlay">
+  <div class="scan-box">
+    <div class="spinner"></div>
+    <p class="scan-title">Analyzing leaf sample</p>
+    <p class="scan-sub">Running CropIQ AI diagnosis…</p>
+    <div class="scan-progress"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
   const input = document.getElementById('leafInput');
   const preview = document.getElementById('preview');
@@ -89,10 +136,24 @@
     document.getElementById('dropzone').classList.add('has-image');
   });
 
-  // Show scanning animation on submit (only if a file is chosen)
-  document.getElementById('scanForm').addEventListener('submit', (e) => {
-    if (input.files.length) {
-      document.getElementById('scanOverlay').classList.add('show');
+  document.getElementById('scanForm').addEventListener('submit', () => {
+    if (input.files.length) document.getElementById('scanOverlay').classList.add('show');
+  });
+
+  new Chart(document.getElementById('trendSpark'), {
+    type: 'line',
+    data: {
+      labels: {{ trend_labels | tojson }},
+      datasets: [{
+        data: {{ trend_total | tojson }},
+        borderColor: '#2e8b4f',
+        backgroundColor: 'rgba(46,139,79,.12)',
+        fill: true, tension: .35, pointRadius: 0, borderWidth: 2
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false, beginAtZero: true } }
     }
   });
 </script>
